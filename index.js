@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { Client, Collection, GatewayIntentBits, Events } = require('discord.js');
-const { LISTENER, SPEAKER } = require('./config.json');
+require('dotenv').config();
 
 // Discordクライアントを作成
 const client1 = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates] });
@@ -64,5 +64,5 @@ client2.once(Events.ClientReady, c => {
 });
 
 // Discordボットにログイン
-client1.login(LISTENER.TOKEN);
-client2.login(SPEAKER.TOKEN);
+client1.login(LISTENER_TOKEN);
+client2.login(SPEAKER_TOKEN);

@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('discord.js');
-const { MUTE_VC_ID, VC_ID } = require('../config.json')
+require('dotenv').config();
 
 module.exports = {
     data: new SlashCommandBuilder()
