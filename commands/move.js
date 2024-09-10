@@ -4,7 +4,7 @@ const { MUTE_VC_ID, VC_ID } = require('../config.json')
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('move')
-        .setDescription('特定のボイスチャンネル内の全員または特定のユーザーを他のボイスチャンネルに移動させます')
+        .setDescription('特定のボイスチャンネル内の人を移動します')
         .addChannelOption(option => 
             option.setName('from')
                 .setDescription('移動元のボイスチャンネル')
@@ -17,7 +17,8 @@ module.exports = {
                 .addChannelTypes(ChannelType.GuildVoice)) // ボイスチャンネルのみを選択可能にする
         .addUserOption(option => 
             option.setName('user')
-                .setDescription('移動させたい特定のユーザー (オプション)'))
+                .setDescription('移動させたい特定のユーザー')
+                .setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.MoveMembers),
     
     async execute(interaction) {
@@ -34,29 +35,13 @@ module.exports = {
 
             try {
                 await member.voice.setChannel(toChannel);
-                return interaction.reply(`${member.user.tag} を ${fromChannel.name} から ${toChannel.name} に移動しました。`);
+                return interaction.reply({ content: `${member.user.tag} を ${fromChannel.name} から ${toChannel.name} に移動しました。`, ephemeral: true });
             } catch (error) {
                 console.error('エラーが発生しました:', error);
                 return interaction.reply({ content: '指定されたユーザーの移動中にエラーが発生しました。', ephemeral: true });
             }
-        }
-
-        // 全員を移動
-        const members = fromChannel.members;
-        if (members.size === 0) {
-            return interaction.reply({ content: '移動元のチャンネルにメンバーがいません。', ephemeral: true });
-        }
-
-        for (const [memberId, member] of members) {
-          await member.voice.setChannel(toChannel);
-          if (toChannel.id === MUTE_VC_ID) {
-            await member.voice.setMute(true);
-          }
-          if (toChannel.id === VC_ID) {
-            await member.voice.setMute(false);
-          }
         };
-                
+
         await interaction.reply(`メンバーを ${fromChannel.name} から ${toChannel.name} に移動しました。`);
     },
 };

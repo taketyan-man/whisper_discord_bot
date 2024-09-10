@@ -3,6 +3,7 @@ const { joinVoiceChannel, createAudioPlayer, NoSubscriberBehavior, EndBehaviorTy
 const AudioMixer = require('audio-mixer');
 const Prism = require('prism-media');
 const { PassThrough } = require('stream');
+
 module.exports = {
 	data: new SlashCommandBuilder()
         // コマンドの名前
@@ -13,13 +14,13 @@ module.exports = {
 		.addChannelOption((option) =>
 			option
 				.setName('channel1')
-				.setDescription('The channel that Listener-bot join')
+				.setDescription('音を取り出すボットを参加させるチャンネル')
 				.setRequired(true),
 		)
 		.addChannelOption((option) =>
 			option
 				.setName('channel2')
-				.setDescription('The channel that Speaker-bot join')
+				.setDescription('音を出すボットを参加させるチャンネル')
 				.setRequired(true),
 		),
 	async execute(interaction, client1, client2) {
@@ -27,7 +28,7 @@ module.exports = {
 		const voiceChannel2 = interaction.options.getChannel('channel2');
 		if (voiceChannel1 && voiceChannel2) {
 			if (voiceChannel1 === voiceChannel2) {
-				await interaction.reply('同じVCには参加できません🥺');
+				await interaction.reply({ content: '同じVCには参加できません🥺', ephemeral: true });
 				return;
 			}
 			// Listener-botがVCに参加する処理
@@ -68,6 +69,7 @@ module.exports = {
 				});
 				const audioMixer = mixer;
 				audioMixer.addInput(standaloneInput);
+				
         // VCの音声の取得機能
 				const audio = connection1.receiver.subscribe(userId, {
 					end: {
@@ -78,17 +80,19 @@ module.exports = {
 					},
 				});
 				const rawStream = new PassThrough();
-				audio
-					.pipe(new Prism.opus.Decoder({ rate: 48000, channels: 2, frameSize: 960 }))
-					.pipe(rawStream);
+				audio.pipe(new Prism.opus.Decoder({ rate: 48000, channels: 2, frameSize: 960 })).pipe(standaloneInput);
 				// 音声をVCに流す機能
+				const mixerOutput = new PassThrough();
+				audioMixer.pipe(mixerOutput);
+
 				const player = createAudioPlayer({
 					behaviors: {
 						// 聞いている人がいなくても音声を中継してくれるように設定
 						noSubscriber: NoSubscriberBehavior.play,
 					},
 				});
-				const resource = createAudioResource(rawStream,
+				
+				const resource = createAudioResource(mixerOutput,
 					{
 						// VCから取得してきた音声はOpus型なので、Opusに設定
 						inputType: StreamType.Raw,
@@ -96,19 +100,24 @@ module.exports = {
 				);
 				player.play(resource);
 				connection2.subscribe(player);
+
         rawStream.on('end', () => {
 					if (this.audioMixer != null) {
 						this.audioMixer.removeInput(standaloneInput);
 						standaloneInput.destroy();
 						rawStream.destroy();
-						p.destroy();
 					}
 				});
+
+				rawStream.on('error', (error) => {
+					console.error('Stream error:', error);
+					rawStream.destroy();
+				})
 			});
-			await interaction.reply('VCを中継します！');
+			await interaction.reply({ content: 'VCを中継します！', ephemeral: true });
 		}
 		else {
-			await interaction.reply('BOTを参加させるVCを指定してください！');
+			await interaction.reply({ content: 'BOTを参加させるVCを指定してください！', ephemeral: true});
 		}
 	},
 };
