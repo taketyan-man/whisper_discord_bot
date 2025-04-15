@@ -2,30 +2,19 @@ const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('disco
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('mute')
-    .setDescription('特定のボイスチャンネル内の特定のユーザーをミュートにします')
+    .setName('allmute')
+    .setDescription('特定のボイスチャンネル内のユーザーをミュートにします')
     .addChannelOption(option => 
       option.setName('channel')
         .setDescription('ミュート対象のボイスチャンネルを選択してください')
         .setRequired(true)
         .addChannelTypes(ChannelType.GuildVoice))
-    .addDiscordoption(option =>
-      option.setName('user')
-        .setDescription('ミュートしたいユーザーを選んでください'))
     .setDefaultMemberPermissions(PermissionFlagsBits.MoveMembers),
   async execute(interaction) {
     const channel = interaction.options.getChannel('channel');
-    const user = interaction.options.getUser('user');
 
     const members = channel.members;
 
-    if(user) {
-      try {
-        await user.voice.setMuste(true);
-      } catch (error) {
-        console.logerror('ミュート処理にエラーが発生しました')
-      }
-    }
     if (members.size === 0) {
       return interaction.reply({ content: '指定されたチャンネルにはメンバーがいません', ephemeral: true });
     }
